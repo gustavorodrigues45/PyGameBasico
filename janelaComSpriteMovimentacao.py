@@ -1,8 +1,6 @@
-###
-### Exploracao da biblioteca PyGame
-###
-### Prof. Filipo Novo Mor
-###
+# Gustavo da Encarnação Rodrigues - 202320375
+#
+
 import pygame
 import sys
 
@@ -21,13 +19,11 @@ preto = (0, 0, 0)
 
 # Carrega a sprite sheet do personagem
 sprite_sheet = pygame.image.load("Attack.png").convert_alpha()
-num_quadros = 8  # Número de quadros na sprite sheet
+num_quadros = 8
+quadro_largura = sprite_sheet.get_width() // num_quadros
+quadro_altura = sprite_sheet.get_height()
 
-# Ajuste para os tamanhos corretos
-quadro_largura = sprite_sheet.get_width() // num_quadros  # Largura de cada quadro
-quadro_altura = sprite_sheet.get_height()  # Altura total da sprite sheet
-
-# Extraí os quadros na linha correta
+# Extraí os quadros da sprite sheet
 quadros = [sprite_sheet.subsurface((i * quadro_largura, 52, quadro_largura, quadro_altura - 52)) for i in range(num_quadros)]
 
 # Função para desenhar o botão
@@ -38,23 +34,20 @@ def desenha_botao(tela, cor, pos, tamanho, texto):
     texto_rect = texto_surface.get_rect(center=(pos[0] + tamanho[0] // 2, pos[1] + tamanho[1] // 2))
     tela.blit(texto_surface, texto_rect)
 
-# Dimensões do botão
+# Dimensões e posição do botão
 largura_botao, altura_botao = 100, 50
-
-# Posição do botão no canto inferior direito
 x_botao = largura - largura_botao - 10
 y_botao = altura - altura_botao - 10
+botao = pygame.Rect(x_botao, y_botao, largura_botao, altura_botao)
 
-# Variáveis de animação
+# Animação
 indice_quadro = 0
-tempo_animacao = 200  # Tempo a cada quadro em milissegundos (ajustável)
-cronometro = 0
+tempo_animacao = 200
 ultimo_tempo = pygame.time.get_ticks()
 
-# Posição inicial do sprite
-pos_x = 10  # Posição inicial do sprite no eixo X
-pos_y = 10  # Posição inicial do sprite no eixo Y
-movimento = 1  # Ajuste para que a movimentação seja mais suave
+# Sprite
+pos_x, pos_y = 10, 10
+velocidade = 2
 
 # Loop principal
 rodando = True
@@ -66,38 +59,39 @@ while rodando:
             if botao.collidepoint(evento.pos):
                 rodando = False
 
-    # Captura os eventos de tecla
+    # Movimentação com as teclas
     teclas = pygame.key.get_pressed()
+    nova_x, nova_y = pos_x, pos_y
     if teclas[pygame.K_RIGHT]:
-        pos_x += movimento  # Movimento para a direita
+        nova_x += velocidade
     if teclas[pygame.K_LEFT]:
-        pos_x -= movimento  # Movimento para a esquerda
+        nova_x -= velocidade
+    if teclas[pygame.K_UP]:
+        nova_y -= velocidade
+    if teclas[pygame.K_DOWN]:
+        nova_y += velocidade
 
-    # Mantém o sprite dentro da janela
-    if pos_x < 0:
-        pos_x = 0
-    elif pos_x > largura - quadro_largura:
-        pos_x = largura - quadro_largura
+    # Limites da janela
+    nova_x = max(0, min(largura - quadro_largura, nova_x))
+    nova_y = max(0, min(altura - (quadro_altura - 52), nova_y))  # Considera parte útil da sprite
 
-    # Calcula o tempo passado desde o último quadro
+    # Verifica se nova posição colide com botão
+    sprite_rect = pygame.Rect(nova_x, nova_y, quadro_largura, quadro_altura - 52)
+    if not sprite_rect.colliderect(botao):
+        pos_x, pos_y = nova_x, nova_y  # Atualiza se não houver colisão
+
+    # Atualiza animação
     agora = pygame.time.get_ticks()
     if agora - ultimo_tempo > tempo_animacao:
         indice_quadro = (indice_quadro + 1) % num_quadros
-        ultimo_tempo = agora  # Atualiza o último tempo
+        ultimo_tempo = agora
 
-    # Preenche o fundo de branco
+    # Desenha
     tela.fill(branco)
-
-    # Desenha a animação do personagem na posição atual
     tela.blit(quadros[indice_quadro], (pos_x, pos_y))
-
-    # Desenha o botão
-    botao = pygame.Rect(x_botao, y_botao, largura_botao, altura_botao)
     desenha_botao(tela, cinza, botao.topleft, botao.size, "Sair")
-
-    # Atualiza a tela
     pygame.display.flip()
 
-# Encerra o pygame
+# Encerra
 pygame.quit()
 sys.exit()
